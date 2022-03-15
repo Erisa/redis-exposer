@@ -64,10 +64,9 @@ If the value is a hash, it will return all items, same as JSON:
 ```json
 {
     "code": 200,
-    "data": [
-        "thing",
-        "otherthing"
-    ]
+    "data": {
+        "thing": "otherthing"
+    }
 }
 ```
 
