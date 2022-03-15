@@ -1,0 +1,16 @@
+{
+  "name": "redis-exposer",
+  "version": "0.0.1",
+  "description": "Serve read-only Redis data over a HTTP API with auth",
+  "main": "index.js",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^4.17.3",
+    "json-bigint": "https://github.com/sidorares/json-bigint",
+    "lossless-json": "^1.0.5",
+    "redis": "^4.0.4"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
