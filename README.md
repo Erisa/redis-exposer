@@ -18,6 +18,8 @@ Environment variables (none are required):
 - `REDIS_URL`: URL pointing to the redis server to connect to. Default is localhost.
 - `SECRET`: The secret to pass for authorization. Default is `superscarysecret`.
 
+Run Docker image `ghcr.io/erisa/redis-exposer` or clone, `yarn` and `yarn start`.
+
 ## Usage
 
 Required: `Authorization` header or `secret` query parameter with the correct value.
