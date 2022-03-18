@@ -6,8 +6,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "express": "^4.17.3",
-    "json-bigint": "https://github.com/sidorares/json-bigint",
-    "lossless-json": "^1.0.5",
+    "json-bigint": "https://github.com/sidorares/json-bigint.git#0ef9fc57063a5b52951529c2e631009753c493b9",
     "redis": "^4.0.4"
   },
   "scripts": {
