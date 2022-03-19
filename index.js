@@ -1,5 +1,5 @@
 const express = require('express');
-const redis = require('redis');
+const Redis = require('ioredis');
 const JSON = require('json-bigint')({ storeAsString: true });
 
 const port = process.env.PORT || 3000;
@@ -7,13 +7,12 @@ const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379/0';
 const secret = process.env.SECRET || 'superscarysecret';
 
 const app = express();
-const redisClient = redis.createClient({ url: redisUrl });
+const redisClient = new Redis(redisUrl);
 
 app.set('json spaces', 2);
 
 redisClient.on('error', (err) => console.log('Redis client error:', err));
 redisClient.on('connect', () => console.log('Connected to Redis!'));
-redisClient.connect();
 
 app.get('/teapot', (req, res) => {
   res.status(418).json({ code: 418, message: "I'm a teapot." });
@@ -49,7 +48,7 @@ app.get('/:key', async (req, res) => {
       return;
 
     case 'hash':
-      redisResp = await redisClient.hGetAll(req.params.key);
+      redisResp = await redisClient.hgetall(req.params.key);
       redisResp.forEach((value, index) => {
         try {
           const jsonResp = JSON.parse(value);
@@ -58,7 +57,7 @@ app.get('/:key', async (req, res) => {
       });
       break;
     case 'list':
-      redisResp = await redisClient.lRange(req.params.key, 0, -1);
+      redisResp = await redisClient.lrange(req.params.key, 0, -1);
       redisResp.forEach((value, index) => {
         try {
           const jsonResp = JSON.parse(value);
@@ -68,13 +67,12 @@ app.get('/:key', async (req, res) => {
       break;
     case 'string':
       redisResp = await redisClient.get(req.params.key);
-
       try {
         redisResp = JSON.parse(redisResp);
       } catch {} // leave as-is
       break;
     default:
-      redisResp = await redisClient.hGetAll(req.params.key);
+      redisResp = await redisClient.hgetall(req.params.key);
   }
 
   if (typeof redisResp !== 'object') {
@@ -105,7 +103,7 @@ app.get('/:key/:value', async (req, res) => {
     return;
   }
 
-  const redisResp = await redisClient.hGet(req.params.key, req.params.value);
+  const redisResp = await redisClient.hget(req.params.key, req.params.value);
 
   if (redisResp) {
     try {
