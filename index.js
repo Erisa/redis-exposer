@@ -47,10 +47,10 @@ app.get('/:key', async (req, res) => {
 
     case 'hash':
       redisResp = await redisClient.hgetall(req.params.key);
-      redisResp.forEach((value, index) => {
+      Object.keys(redisResp).forEach(key => {
         try {
-          const jsonResp = JSON.parse(value);
-          redisResp[index] = jsonResp;
+          const jsonResp = JSON.parse(redisResp[key]);
+          redisResp[key] = jsonResp;
         } catch {} // leave as-is
       });
       break;
