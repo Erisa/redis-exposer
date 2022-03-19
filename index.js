@@ -24,7 +24,6 @@ app.get("/teapot", async (req, res) => {
 })
 
 app.use(function(req, res, next) {
-    console.log(req.query)
     if (req.headers.authorization != secret && req.query.secret != secret) {
         return res.status(401).json({ code: 401, error: 'Unauthorized.' });
     }
@@ -44,7 +43,6 @@ app.get("/", async (req, res) => {
 app.get("/:key", async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     const keyType = await redisClient.type(req.params.key)
-    console.log(keyType)
     let redisResp = null
     if (keyType === "hash"){
         redisResp = await redisClient.hGetAll(req.params.key)
