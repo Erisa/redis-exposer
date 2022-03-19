@@ -1,8 +1,10 @@
 FROM node:16-alpine
 
-WORKDIR /app
-ADD . /app
-
 RUN apk add --no-cache git
-RUN yarn install --prod --frozen-lockfile
+
+WORKDIR /app
+COPY . /app/
+
+RUN yarn install --prod --frozen-lockfile \
+    && apk del --no-cache git
 ENTRYPOINT ["node", "/app/index.js"]
