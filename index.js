@@ -75,7 +75,7 @@ app.get('/:key', async (req, res) => {
       redisResp = await redisClient.hgetall(req.params.key);
   }
 
-  if (typeof redisResp !== 'object') {
+  if (typeof redisResp === 'string') {
     try {
       const jsonResp = JSON.parse(redisResp);
       res.json({
