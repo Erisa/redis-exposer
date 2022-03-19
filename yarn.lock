@@ -232,9 +232,9 @@ ipaddr.js@1.9.1:
   resolved "https://registry.yarnpkg.com/ipaddr.js/-/ipaddr.js-1.9.1.tgz#bff38543eeb8984825079ff3a2a8e6cbd46781b3"
   integrity sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==
 
-"json-bigint@https://github.com/sidorares/json-bigint.git#0ef9fc57063a5b52951529c2e631009753c493b9":
+"json-bigint@git+https://github.com/sidorares/json-bigint.git#0ef9fc57063a5b52951529c2e631009753c493b9":
   version "1.0.0"
-  resolved "https://github.com/sidorares/json-bigint.git#0ef9fc57063a5b52951529c2e631009753c493b9"
+  resolved "git+https://github.com/sidorares/json-bigint.git#0ef9fc57063a5b52951529c2e631009753c493b9"
   dependencies:
     bignumber.js "^9.0.0"
 
