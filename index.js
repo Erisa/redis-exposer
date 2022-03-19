@@ -1,142 +1,137 @@
-const express = require('express')
+const express = require('express');
+const Redis = require('ioredis');
 const JSON = require('json-bigint')({ storeAsString: true });
-const app = express()
+
 const port = process.env.PORT || 3000;
-const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379/0'
-const secret = process.env.SECRET || "superscarysecret"
+const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379/0';
+const secret = process.env.SECRET || 'superscarysecret';
 
-const redis = require('redis');
+const app = express();
+const redisClient = new Redis(redisUrl);
 
-const redisClient = redis.createClient({
-    url: redisUrl
+app.set('json spaces', 2);
+
+redisClient.on('error', (err) => console.log('Redis client error:', err));
+redisClient.on('connect', () => console.log('Connected to Redis!'));
+
+app.get('/teapot', (req, res) => {
+  res.status(418).json({ code: 418, message: "I'm a teapot." });
 });
 
-redisClient.on('error', (err) => console.log('Redis Client Error', err));
-
-redisClient.on('connect', function() {
-    console.log('Connected to redis!');
+app.use((req, res, next) => {
+  if (req.headers.authorization !== secret && req.query.secret !== secret) {
+    res.status(401).json({ code: 401, error: 'Unauthorized.' });
+    return;
+  }
+  next();
 });
 
-redisClient.connect();
-
-app.get("/teapot", async (req, res) => {
-    res.status(418).json({code: 418, message: "I'm a teapot."})
-})
-
-app.use(function(req, res, next) {
-    if (req.headers.authorization != secret && req.query.secret != secret) {
-        return res.status(401).json({ code: 401, error: 'Unauthorized.' });
-    }
-    next();
+app.get('/', (req, res) => {
+  res.status(403).json({
+    code: 403,
+    message: 'GET / is not allowed.'
+  });
 });
 
-app.set('json spaces', 2)
+app.get('/:key', async (req, res) => {
+  const keyType = await redisClient.type(req.params.key);
+  let redisResp = null;
 
-app.get("/", async (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.status(403).json({
-        code: 403,
-        message: "GET / is not allowed."
-    })
-})
+  switch (keyType) {
+    case 'none':
+      res.status(404).json({
+        code: 404,
+        message: 'Key does not exist or is null.'
+      });
+      return;
 
-app.get("/:key", async (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    const keyType = await redisClient.type(req.params.key)
-    let redisResp = null
-    if (keyType === "hash"){
-        redisResp = await redisClient.hGetAll(req.params.key)
-        
-        for (let key in redisResp){
-            try {
-                jsonResp = JSON.parse(redisResp[key])
-                redisResp[key] = jsonResp
-            } catch(e) {
-                // do nothing
-            }
-        }
-    }
-    else if (keyType == "none"){
-        res.status(404).json({
-            code: 404,
-            message: "Key does not exist or is null."
-        })
-        return
-    }
-    else if (keyType == "list"){
-        redisResp = await redisClient.lRange(req.params.key, 0, -1)
+    case 'hash':
+      redisResp = await redisClient.hgetall(req.params.key);
+      redisResp.forEach((value, index) => {
+        try {
+          const jsonResp = JSON.parse(value);
+          redisResp[index] = jsonResp;
+        } catch {} // leave as-is
+      });
+      break;
+    case 'list':
+      redisResp = await redisClient.lrange(req.params.key, 0, -1);
+      redisResp.forEach((value, index) => {
+        try {
+          const jsonResp = JSON.parse(value);
+          redisResp[index] = jsonResp;
+        } catch {} // leave as-is
+      });
+      break;
+    case 'string':
+      redisResp = await redisClient.get(req.params.key);
+      try {
+        redisResp = JSON.parse(redisResp);
+      } catch {} // leave as-is
+      break;
+    default:
+      redisResp = await redisClient.hgetall(req.params.key);
+  }
 
-        redisResp.forEach(function(value, index){
-            try {
-                jsonResp = JSON.parse(value)
-                redisResp[index] = jsonResp
-            } catch {
-                // leave as-is
-            }
-        })
-    }
-    else {
-        redisResp = await redisClient.hGetAll(req.params.key)    
-    }
-
+  if (typeof redisResp === 'string') {
     try {
-        jsonResp = JSON.parse(redisResp)
-        res.json({
-            code: 200,
-            data: jsonResp
-        })
-    } catch(e) {
-        res.json({
-            code: 200,
-            data: redisResp
-        })
-    }
-})
+      const jsonResp = JSON.parse(redisResp);
+      res.json({
+        code: 200,
+        data: jsonResp
+      });
+      return;
+    } catch {} // do nothing
+  }
+
+  res.json({
+    code: 200,
+    data: redisResp
+  });
+});
 
 app.get('/:key/:value', async (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    const keyType = await redisClient.type(req.params.key)
-    
-    if (keyType != "hash"){
-        res.status(400).json({
-            code: 400,
-            message: "Bad request, key is not a hash and cannot be accessed like a hash. Try /:key."
-        })
-        return
+  const keyType = await redisClient.type(req.params.key);
+
+  if (keyType !== 'hash') {
+    res.status(400).json({
+      code: 400,
+      message: 'Bad request, key is not a hash and cannot be accessed like a hash. Try /:key.'
+    });
+    return;
+  }
+
+  const redisResp = await redisClient.hget(req.params.key, req.params.value);
+
+  if (redisResp) {
+    try {
+      const jsonResp = JSON.parse(redisResp);
+      res.json({
+        code: 200,
+        data: jsonResp
+      });
+    } catch {
+      res.json({
+        code: 200,
+        data: redisResp
+      });
     }
-
-    const redisResp = await redisClient.hGet(req.params.key, req.params.value)
-
-    if (redisResp){
-        try {
-            jsonResp = JSON.parse(redisResp);
-            res.json({
-                "code": 200,
-                "data": jsonResp
-            })        
-        } catch(e) {
-            res.json({
-                "code": "200",
-                "data": redisResp
-            })
-        }
-    } else {
-        res.status(404).json({
-            "code": "404",
-            "message": "Key/value pair does not exist or is null."
-        })
-    }
-})
-
-app.get('*', function(req, res){
-    res.status(404).json({code: 404, message: "Path has no handler."});
+  } else {
+    res.status(404).json({
+      code: 404,
+      message: 'Key/value pair does not exist or is null.'
+    });
+  }
 });
 
-app.all('*', function(req, res){
-    res.status(405).json({code: 404, message: "Method not allowed."});
+app.get('*', (req, res) => {
+  res.status(404).json({ code: 404, message: 'Path has no handler.' });
 });
-  
+
+app.all('*', (req, res) => {
+  res.status(405).json({ code: 405, message: 'Method not allowed.' });
+});
 
 app.listen(port, () => {
-    console.log(`Listening on port ${port}`)
-})
+  console.log(`Listening on port ${port}`);
+});
