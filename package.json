@@ -11,6 +11,6 @@
   },
   "scripts": {
     "start": "node index.js",
-    "lint": "npx semistandard index.js"
+    "lint": "npx standard index.js"
   }
 }
