@@ -69,8 +69,22 @@ app.get('/:key', async (req, res) => {
         redisResp = JSON.parse(redisResp)
       } catch {} // leave as-is
       break
+    case 'set':
+      redisResp = await redisClient.smembers(req.params.key)
+      redisResp.forEach((value, index) => {
+        try {
+          const jsonResp = JSON.parse(value)
+          redisResp[index] = jsonResp
+        } catch {} // leave as-is
+      })
+      break
     default:
-      redisResp = await redisClient.hgetall(req.params.key)
+      res.status(501).json({
+        status: 501,
+        message: 'Support for this key type has not been implemented.',
+        keyType: keyType
+      })
+      break
   }
 
   if (typeof redisResp === 'string') {
@@ -93,11 +107,29 @@ app.get('/:key', async (req, res) => {
 app.get('/:key/:value', async (req, res) => {
   const keyType = await redisClient.type(req.params.key)
 
-  if (keyType !== 'hash') {
+  if (keyType !== 'hash' && keyType !== 'set') {
     res.status(400).json({
       code: 400,
-      message: 'Bad request, key is not a hash and cannot be accessed like a hash. Try /:key.'
+      message: 'Bad request, key is not a hash or set and cannot be accessed like one. Try /:key.'
     })
+    return
+  }
+
+  if (keyType === 'set') {
+    const memberExists = Boolean(await redisClient.sismember(req.params.key, req.params.value))
+
+    if (memberExists) {
+      res.json({
+        code: 200,
+        memberExists: memberExists,
+        data: req.params.value
+      })
+    } else {
+      res.status(404).json({
+        code: 404,
+        message: 'Member does not exist in the set.'
+      })
+    }
     return
   }
 
