@@ -127,6 +127,7 @@ app.get('/:key/:value', async (req, res) => {
     } else {
       res.status(404).json({
         code: 404,
+        memberExists: memberExists,
         message: 'Member does not exist in the set.'
       })
     }
