@@ -72,12 +72,12 @@ If the value is a hash, it will return all items, same as JSON:
 
 ### `GET /:key/:value`
 
-If the key is not a hash, you get yelled at:
+If the key is not a hash or a set, you get yelled at:
 
 ```json
 {
   "code": 400,
-  "message": "Bad request, key is not a hash and cannot be accessed like a hash. Try /:key."
+  "message": "Bad request, key is not a hash or set and cannot be accessed like one. Try /:key."
 }
 ```
 
@@ -89,11 +89,29 @@ If the value does not exist, you also get yelled at:
 }
 ```
 
-But if it does exist, you get data:
+But if a hash exists, you get data:
 ```json
 {
     "code": 200,
     "data": "thing in a hash"
+}
+```
+
+If the key is a set and value does not exist, you get a slightly different error:
+```json
+{
+  "code": 404,
+  "memberExists": false,
+  "message": "Member does not exist in the set."
+}
+```
+
+If the key is a set and the value exists, you get confirmation and the value back again:
+```json
+{
+  "code": 200,
+  "memberExists": true,
+  "data": "thing1"
 }
 ```
 
