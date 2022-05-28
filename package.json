@@ -5,8 +5,8 @@
   "main": "index.js",
   "license": "UNLICENSED",
   "dependencies": {
-    "express": "4.17.3",
-    "ioredis": "4.28.5",
+    "express": "4.18.1",
+    "ioredis": "5.0.5",
     "json-bigint": "git+https://github.com/sidorares/json-bigint.git#0ef9fc57063a5b52951529c2e631009753c493b9"
   },
   "scripts": {
