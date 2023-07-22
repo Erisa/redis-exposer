@@ -82,7 +82,7 @@ app.get('/:key', async (req, res) => {
       res.status(501).json({
         status: 501,
         message: 'Support for this key type has not been implemented.',
-        keyType: keyType
+        keyType
       })
       break
   }
@@ -121,13 +121,13 @@ app.get('/:key/:value', async (req, res) => {
     if (memberExists) {
       res.json({
         code: 200,
-        memberExists: memberExists,
+        memberExists,
         data: req.params.value
       })
     } else {
       res.status(404).json({
         code: 404,
-        memberExists: memberExists,
+        memberExists,
         message: 'Member does not exist in the set.'
       })
     }
